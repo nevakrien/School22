@@ -49,5 +49,5 @@ complex mult_comp_comp(complex a,complex b){
 }
 
 float abs_comp(complex a){
-	return a.x*a.x+a.y*a.y;
+	return sqrt(a.x*a.x+a.y*a.y);
 }

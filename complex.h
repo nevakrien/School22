@@ -1,6 +1,7 @@
 #ifndef COMPLEX_H
 #define COMPLEX_H
 #include <stdio.h>
+#include <math.h>
 
 typedef struct complex{
 	float x;
