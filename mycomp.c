@@ -108,13 +108,32 @@ int main(void){
 				goto loop_start;
 			}
 			return 0;
+		case EOFED:
+			printf("End of file reached while reading command\n");
+			return 1;
+		case UNKONWN:
+			printf("Unknown command \"%s\"\n",command_buffer);
+			if(flush_line()<0){
+				printf("End of file reached while reading unknown command\n");
+				return 1;
+			}
+			break;
+		case UNKONWN_OVERFLOW:
+			printf("Unknown command \"%s...\"\n",command_buffer);
+			if(flush_line()<0){
+				printf("End of file reached while reading long unknown command\n");
+				return 1;
+			}
+			break;
+
 		default:
 			flush_line();
 			printf("not implemented\n");
 		}
 
+
 	}
 	
 
-	return 0;
+	return 1;
 }
