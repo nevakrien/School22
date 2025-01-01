@@ -11,7 +11,7 @@
 #define EOF_FOUND "End of file reached while parsing\n"
 #define BAD_COMMA "Illegal comma\n"
 #define MISSING_COMMA "Missing comma\n"
-#define EXPECTED_NUM "nvalid parameter – not a number\n"
+#define EXPECTED_NUM "Invalid parameter – not a number\n"
 
 typedef enum command_type{
 	UNKONWN_OVERFLOW=-3,
@@ -358,11 +358,7 @@ int main(void){
 	
 	for(;;){
 		type = read_type(command_buffer);
-
-		/*
-		printf("got (len = %ld): %s\n",strlen(command_buffer),command_buffer);
-		*/
-
+		
 		skip_spaces();
 		/*check for bad comma message*/
 		if(
@@ -419,9 +415,11 @@ int main(void){
 			if(flush_line() || command_buffer[0]){
 				printf(UNKONWN_COMMAND_NAME);
 				/*
-				TODO remove this helpful error message sine its not in the specs
-				*/
+				this helpful error message is removed since its not in the specs
 				printf("found string %s\n",command_buffer);
+				printf("found string %s...\n",command_buffer);
+				*/
+				
 			}
 			break;
 		
