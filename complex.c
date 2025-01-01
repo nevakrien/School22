@@ -3,7 +3,7 @@
 void print_comp(complex a){
 	printf("%6f ",a.x);
 	if(a.y>=0) putchar('+');
-	printf("%6f",a.y);
+	printf("%6fi",a.y);
 }
 
 complex add_comp(complex a,complex b){

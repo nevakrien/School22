@@ -131,21 +131,29 @@ void skip_spaces(){
 	ungetc(c,stdin);
 }
 
+char pop_char(){
+	int c=getchar();
+	if(c==EOF){
+		printf(EOF_FOUND);
+		exit(1);
+	}
+	return c;
+}
+
 int read_var_index(){
 	char c; 
 	int i;
 
 	skip_spaces();
-	if(scanf("%c",&c) == 0){
-		flush_line();
-		return -1;
-	}
+	c= pop_char();
 
 	if(c=='\n'){
 		printf(MISSING_VAR);
 		flush_line();
 		return -1;
 	}
+
+
 	i = c - 'A'; /*using an asci trick from "the c programing languge"*/
 	if(i<0 || i>=6){
 		ungetc(c,stdin);
@@ -155,15 +163,6 @@ int read_var_index(){
 	}
 
 	return i;
-}
-
-char pop_char(){
-	int c=getchar();
-	if(c==EOF){
-		printf(EOF_FOUND);
-		exit(1);
-	}
-	return c;
 }
 
 int check_bad_comma(){
@@ -213,10 +212,21 @@ int read_float(float* fp){
 		return 0;
 	}
 
+	if(check_bad_comma()) return 0;
+
 	if(scanf("%f",fp)!=1){
 		printf(EXPECTED_NUM);
+		flush_line();
 		return 0;
 	}
+
+	return 1;
+}
+
+int read_comp(complex* ans){
+	if(!read_float(&ans->x)) return 0;
+	if(!read_good_comma()) return 0;
+	if(!read_float(&ans->y)) return 0;
 
 	return 1;
 }
@@ -228,12 +238,11 @@ void read_comp_func(complex vars[6]){
 	if(id < 0) return;
 	
 	if(!read_good_comma()) return;
-	if(!read_float(&ans.x)) return;
-	if(!read_good_comma()) return;
-	if(!read_float(&ans.y)) return;
+	if(!read_comp(&ans)) return;
 
 	if(flush_line()){
 		printf(EXTRA_TEXT);
+		return;
 	}
 
 	vars[id] = ans;
@@ -244,13 +253,103 @@ void print_comp_func(complex vars[6]){
 	if(id < 0) return;
 
 	if(flush_line()){
-		printf(EXTRA_TEXT); 	
+		printf(EXTRA_TEXT);
+		return;
 	}
 
 	print_comp(vars[id]); putchar('\n');
 }
 
+void abs_comp_func(complex vars[6]){
+	float ans;
+	int id = read_var_index();
+	if(id < 0) return;
 
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	ans = abs_comp(vars[id]);
+	printf("%f\n",ans);
+}
+
+void add_comp_func(complex vars[6]){
+	int id1,id2;
+
+	if((id1 = read_var_index())<0) return;
+	if(!read_good_comma()) return;
+	if((id2 = read_var_index())<0) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	vars[id1] = add_comp(vars[id1],vars[id2]);
+}
+
+void sub_comp_func(complex vars[6]){
+	int id1,id2;
+
+	if((id1 = read_var_index())<0) return;
+	if(!read_good_comma()) return;
+	if((id2 = read_var_index())<0) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	vars[id1] = sub_comp(vars[id1],vars[id2]);
+}
+void mult_comp_comp_func(complex vars[6]){
+	int id1,id2;
+
+	if((id1 = read_var_index())<0) return;
+	if(!read_good_comma()) return;
+	if((id2 = read_var_index())<0) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	vars[id1] = mult_comp_comp(vars[id1],vars[id2]);
+}
+
+
+void mult_comp_real_func(complex vars[6]){
+	float f;
+
+	int id = read_var_index();
+	if(id < 0) return;
+	if(!read_good_comma()) return;
+	if(!read_float(&f)) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	vars[id] = mult_comp_real(vars[id],f);
+}
+
+void mult_comp_img_func(complex vars[6]){
+	float f;
+
+	int id = read_var_index();
+	if(id < 0) return;
+	if(!read_good_comma()) return;
+	if(!read_float(&f)) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT);
+		return;
+	}
+
+	vars[id] = mult_comp_img(vars[id],f);
+}
 
 int main(void){
 	complex vars[6] = {0};
@@ -282,6 +381,29 @@ int main(void){
 		case PRINT_COMP:
 			print_comp_func(vars);
 			break;
+
+		case ADD_COMP:
+			add_comp_func(vars);
+			break;
+		case SUB_COMP:
+			sub_comp_func(vars);
+			break;
+		
+		case MULT_COMP_COMP:
+			mult_comp_comp_func(vars);
+			break;
+
+		case ABS_COMP:
+			abs_comp_func(vars);
+			break;
+
+		case MULT_COMP_REAL:
+			mult_comp_real_func(vars);
+			break;
+		case MULT_COMP_IMG:
+			mult_comp_img_func(vars);
+			break;
+
 		case STOP:
 			if(flush_line()){
 				printf(EXTRA_TEXT);
@@ -296,18 +418,13 @@ int main(void){
 		case UNKONWN_OVERFLOW:
 			if(flush_line() || command_buffer[0]){
 				printf(UNKONWN_COMMAND_NAME);
+				/*
+				TODO remove this helpful error message sine its not in the specs
+				*/
+				printf("found string %s\n",command_buffer);
 			}
-			/*
-			*/
-			printf("found string %s\n",command_buffer);
-
-
 			break;
-
-
-		default:
-			flush_line();
-			printf("not implemented\n");
+		
 		}
 
 
