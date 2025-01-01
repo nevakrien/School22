@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
 
 #define UNKONWN_COMMAND_NAME "Undefined command name\n"
 #define EXTRA_TEXT  "Extraneous text after end of command\n"
@@ -9,6 +10,8 @@
 #define MISSING_VAR "Missing parameter\n"
 #define EOF_FOUND "End of file reached while parsing\n"
 #define BAD_COMMA "Illegal comma\n"
+#define MISSING_COMMA "Missing comma\n"
+#define EXPECTED_NUM "nvalid parameter – not a number\n"
 
 typedef enum command_type{
 	UNKONWN_OVERFLOW=-3,
@@ -154,30 +157,97 @@ int read_var_index(){
 	return i;
 }
 
-int check_bad_comma(){
+char pop_char(){
 	int c=getchar();
+	if(c==EOF){
+		printf(EOF_FOUND);
+		exit(1);
+	}
+	return c;
+}
+
+int check_bad_comma(){
+	char c=pop_char();
 	if(c==','){
 		printf(BAD_COMMA);
 		flush_line();
 		return 1;
 	}
-	if(c==EOF){
-		printf(EOF_FOUND);
-		exit(1);
-	}
 	ungetc(c,stdin);
 	return 0;
 }
 
+int read_good_comma(){
+	char c;
+
+	skip_spaces();
+	c=pop_char();
+	if(c==','){
+		return 1;
+	}
+
+
+	printf(MISSING_COMMA);
+	
+	ungetc(c,stdin);
+	flush_line();
+	return 0;
+}
+
+int check_line_end(){
+	int c;
+	skip_spaces();
+	c = pop_char();
+	ungetc(c,stdin);
+
+	if(c=='\n'){
+		return 1;
+	}
+
+	return 0;
+}
+
+int read_float(float* fp){
+	if(check_line_end()){
+		printf(MISSING_VAR);
+		return 1;
+	}
+
+	if(scanf("%f",fp)!=1){
+		printf(EXPECTED_NUM);
+		return 1;
+	}
+
+	return 0;
+}
+
 void read_comp_func(complex vars[6]){
+	complex ans;
+
 	int id = read_var_index();
 	if(id < 0) return;
-
-	printf("not implemented\n");
+	
+	if(!read_good_comma()) return;
+	if(!read_float(&ans.x)) return;
+	if(!read_good_comma()) return;
+	if(!read_float(&ans.y)) return;
 
 	if(flush_line()){
 		printf(EXTRA_TEXT);
 	}
+
+	vars[id] = ans;
+}
+
+void print_comp_func(complex vars[6]){
+	int id = read_var_index();
+	if(id < 0) return;
+
+	if(flush_line()){
+		printf(EXTRA_TEXT); 	
+	}
+
+	print_comp(vars[id]); putchar('\n');
 }
 
 
@@ -189,7 +259,8 @@ int main(void){
 	
 	for(;;){
 		type = read_type(command_buffer);
-		printf("got: %s\n",command_buffer);
+
+		printf("got (len = %ld): %s\n",strlen(command_buffer),command_buffer);
 
 		skip_spaces();
 		/*check for bad comma message*/
@@ -206,6 +277,9 @@ int main(void){
 		case READ_COMP:
 			read_comp_func(vars);
 			break;
+		case PRINT_COMP:
+			print_comp_func(vars);
+			break;
 		case STOP:
 			if(flush_line()){
 				printf(EXTRA_TEXT);
@@ -218,8 +292,9 @@ int main(void){
 		
 		case UNKONWN:
 		case UNKONWN_OVERFLOW:
-			flush_line();
-			printf(UNKONWN_COMMAND_NAME);
+			if(flush_line() || command_buffer[0]){
+				printf(UNKONWN_COMMAND_NAME);
+			}
 			/*printf("found string %s\n",command_buffer);*/
 
 			break;
