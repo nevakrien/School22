@@ -1,13 +1,14 @@
 #include "complex.h"
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define UNKONWN_COMMAND_NAME "Undefined command name\n"
 #define EXTRA_TEXT  "Extraneous text after end of command\n"
 #define UNDEFINED_VAR "Undefined complex variable\n"
 #define MISSING_VAR "Missing parameter\n"
 #define EOF_FOUND "End of file reached while parsing\n"
-
+#define BAD_COMMA "Illegal comma\n"
 
 typedef enum command_type{
 	UNKONWN_OVERFLOW=-3,
@@ -29,6 +30,17 @@ typedef enum command_type{
 
 } command_type;
 
+int is_valid_command(command_type type){
+	switch (type) {
+	case UNKONWN_OVERFLOW:
+	case UNKONWN:
+	case EOFED:
+		return 0;
+	default:
+		return 1;
+	};
+}
+
 const size_t NUM_COMMANDS = 9;
 #define COMMAND_MAX_SIZE  15/*15=sizeof("mult_comp_comp")*/
 
@@ -38,7 +50,7 @@ int flush_line(void){
 	/*try just whitespace*/
 	do{
 		c=getchar();
-	}while(c== ' ' || c=='\t');
+	}while(c!='\n'&&isspace(c));
 
 	if(c=='\n') return 0;
 	if(c==EOF) {
@@ -55,7 +67,6 @@ int flush_line(void){
 		exit(1);
 	};
 	return 1;
-
 }
 
 command_type read_type(char buffer[COMMAND_MAX_SIZE+1]){
@@ -80,8 +91,7 @@ command_type read_type(char buffer[COMMAND_MAX_SIZE+1]){
 	for(i=0;i<COMMAND_MAX_SIZE;i++){
 		c = getchar();
 		if(c==EOF) return EOFED;
-		if(c==' ') break;
-		if(c=='\n'||c==','){
+		if(!isalpha(c) && c!='_'){
 			ungetc(c,stdin);
 			break;
 		}
@@ -107,7 +117,9 @@ command_type read_type(char buffer[COMMAND_MAX_SIZE+1]){
 
 void skip_spaces(){
 	int c;
-	while((c=getchar())==' '|| c=='\t');
+	do{
+		c=getchar();
+	}while(c!='\n'&&isspace(c));
 
 	if(c== EOF){
 		printf(EOF_FOUND);
@@ -142,6 +154,21 @@ int read_var_index(){
 	return i;
 }
 
+int check_bad_comma(){
+	int c=getchar();
+	if(c==','){
+		printf(BAD_COMMA);
+		flush_line();
+		return 1;
+	}
+	if(c==EOF){
+		printf(EOF_FOUND);
+		exit(1);
+	}
+	ungetc(c,stdin);
+	return 0;
+}
+
 void read_comp_func(complex vars[6]){
 	int id = read_var_index();
 	if(id < 0) return;
@@ -153,6 +180,8 @@ void read_comp_func(complex vars[6]){
 	}
 }
 
+
+
 int main(void){
 	complex vars[6] = {0};
 	char command_buffer[COMMAND_MAX_SIZE+1];
@@ -160,6 +189,19 @@ int main(void){
 	
 	for(;;){
 		type = read_type(command_buffer);
+		printf("got: %s\n",command_buffer);
+
+		skip_spaces();
+		/*check for bad comma message*/
+		if(
+			is_valid_command(type)
+			&&check_bad_comma()
+		){
+			flush_line();
+			continue;
+		};
+		
+
 		switch(type){
 		case READ_COMP:
 			read_comp_func(vars);
@@ -173,13 +215,13 @@ int main(void){
 		case EOFED:
 			printf("End of file reached in normal way\n");
 			return 1;
+		
 		case UNKONWN:
 		case UNKONWN_OVERFLOW:
+			flush_line();
 			printf(UNKONWN_COMMAND_NAME);
-			if(flush_line()<0){
-				printf("End of file reached while reading unknown command\n");
-				return 1;
-			}
+			/*printf("found string %s\n",command_buffer);*/
+
 			break;
 
 
