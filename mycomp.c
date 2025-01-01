@@ -210,15 +210,15 @@ int check_line_end(){
 int read_float(float* fp){
 	if(check_line_end()){
 		printf(MISSING_VAR);
-		return 1;
+		return 0;
 	}
 
 	if(scanf("%f",fp)!=1){
 		printf(EXPECTED_NUM);
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	return 1;
 }
 
 void read_comp_func(complex vars[6]){
@@ -260,7 +260,9 @@ int main(void){
 	for(;;){
 		type = read_type(command_buffer);
 
+		/*
 		printf("got (len = %ld): %s\n",strlen(command_buffer),command_buffer);
+		*/
 
 		skip_spaces();
 		/*check for bad comma message*/
@@ -295,7 +297,10 @@ int main(void){
 			if(flush_line() || command_buffer[0]){
 				printf(UNKONWN_COMMAND_NAME);
 			}
-			/*printf("found string %s\n",command_buffer);*/
+			/*
+			*/
+			printf("found string %s\n",command_buffer);
+
 
 			break;
 
